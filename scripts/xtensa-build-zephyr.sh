@@ -73,6 +73,7 @@ usage: $0 [options] [ platform(s) ] [ -- cmake arguments ]
           another.
 
        -v Verbose Makefile log
+	   -f IPC4 build, use tgl-cavs toml
 
 This script supports XtensaTools but only when installed in a specific
 directory structure, example:
@@ -303,7 +304,7 @@ parse_args()
 	local OPTIND=1
 
 	# Parse -options
-	while getopts "acz:j:k:p:v" OPTION; do
+	while getopts "acz:j:k:p:vf" OPTION; do
 		case "$OPTION" in
 			a) PLATFORMS=("${DEFAULT_PLATFORMS[@]}") ;;
 			c) DO_CLONE=yes ;;
@@ -312,6 +313,7 @@ parse_args()
 			k) RIMAGE_KEY_OPT="$OPTARG" ;;
 			p) zeproj="$OPTARG" ;;
 			v) BUILD_VERBOSE=true ;;
+			f) CAVS_TOML=yes ;;
 			*) print_usage; exit 1 ;;
 		esac
 	done
@@ -365,7 +367,6 @@ parse_args()
 			exit 1
 		fi
 	done
-
 	# Check some target platform(s) have been passed in one way or
 	# the other
 	if [ "${#PLATFORMS[@]}" -eq 0 ]; then
@@ -423,8 +424,11 @@ see https://docs.zephyrproject.org/latest/getting_started/index.html"
 
 		( cd "${WEST_TOP}" && assert_west_topdir )
 	fi
-
-
+    
+    if [ "$CAVS_TOML" == "yes" ]; then
+	  sed -i '$d' "${SOF_TOP}"/zephyrproject/zephyr/boards/xtensa/intel_adsp_cavs25/board.cmake
+	  echo "board_set_rimage_target(tgl-cavs)" >> "${SOF_TOP}"/zephyrproject/zephyr/boards/xtensa/intel_adsp_cavs25/board.cmake
+    fi
 	# Symlink zephyr-project to our SOF selves if no sof west module yet
 	test -e "${WEST_TOP}"/modules/audio/sof || {
 		mkdir -p "${WEST_TOP}"/modules/audio
