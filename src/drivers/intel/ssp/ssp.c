@@ -246,8 +246,16 @@ static int ssp_set_config_tplg(struct dai *dai, struct ipc_config_dai *common_co
 	/* ignore config if SSP is already configured */
 	if (ssp->state[DAI_DIR_PLAYBACK] > COMP_STATE_READY ||
 	    ssp->state[DAI_DIR_CAPTURE] > COMP_STATE_READY) {
-		dai_info(dai, "ssp_set_config(): Already configured. Ignore config");
-		goto clk;
+		if (!memcmp(&ssp->params, &config->ssp, sizeof(ssp->params))) {
+			dai_info(dai, "ssp_set_config(): Already configured. Ignore config");
+			goto clk;
+		}
+
+		if (ssp->state[DAI_DIR_PLAYBACK] == COMP_STATE_ACTIVE ||
+		    ssp->state[DAI_DIR_CAPTURE] == COMP_STATE_ACTIVE) {
+			dai_warn(dai, "ssp_set_config(): Config update ignored, SSP is active");
+			goto clk;
+		}
 	}
 
 	dai_info(dai, "ssp_set_config(), config->format = 0x%4x",
